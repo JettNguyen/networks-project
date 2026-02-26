@@ -40,3 +40,67 @@ def get_peer_logger(peer_id, working_dir):
 class PeerLogger:
     peer_id: int
     _logger: logging.Logger
+
+    # Log the message body
+    def _log(self, msg):
+        self._logger.info(msg)
+
+    # Whenever a peer makes a TCP connection to other peer, it generates the following log:
+    # [Time]: Peer [peer_ID 1] makes a connection to Peer [peer_ID 2].
+    def connect_to(self, peer_id2):
+        self._log(f"Peer {self.peer_id} makes a connection to Peer {peer_id2}.")
+
+    # Whenever a peer is connected from another peer, it generates the following log:
+    # [Time]: Peer [peer_ID 1] is connected from Peer [peer_ID 2].
+    def connect_from(self, peer_id2):
+        self._log(f"Peer {self.peer_id} is connected from Peer {peer_id2}.")
+
+    # Whenever a peer changes its preferred neighbors, it generates the following log:
+    # [Time]: Peer [peer_ID] has the preferred neighbors [preferred neighbor ID list].
+    def preferred_neighbors(self, neighbor_ids):
+        # [preferred neighbor list] is the list of peer IDs separated by comma ','
+        neighbor_list = ", ".join(str(x) for x in neighbor_ids)
+        self._log(f"Peer {self.peer_id} has the preferred neighbors [{neighbor_list}].")
+
+    # Whenever a peer changes its optimistically unchoked neighbor, it generates the following log:
+    # [Time]: Peer [peer_ID] has the optimistically unchoked neighbor [optimistically unchoked neighbor ID].
+    def optimistically_unchoked(self, neighbor_id):
+        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor [{neighbor_id}].")
+
+    # Whenever a peer is unchoked by a neighbor (a peer receives an unchoking message from a neighbor), it generates the following log:
+    # [Time]: Peer [peer_ID 1] is unchoked by [peer_ID 2].
+    def unchoked_by(self, peer_id2):
+        self._log(f"Peer {self.peer_id} is unchoked by {peer_id2}.")
+
+    # Whenever a peer is choked by a neighbor (which means when a peer receives a choking message from a neighbor), it generates the following log:
+    # [Time]: Peer [peer_ID 1] is choked by [peer_ID 2].
+    def choked_by(self, peer_id2):
+        self._log(f"Peer {self.peer_id} is choked by {peer_id2}.")
+
+    # Whenever a peer receives a ‘have’ message, it generates the following log:
+    # [Time]: Peer [peer_ID 1] received the ‘have’ message from [peer_ID 2] for the piece [piece index].
+    def received_have(self, peer_id2, piece_index):
+        self._log(f"Peer {self.peer_id} received the 'have' message from {peer_id2} for the piece {piece_index}.")
+
+    # Whenever a peer receives an ‘interested’ message, it generates the following log:
+    # [Time]: Peer [peer_ID 1] received the ‘interested’ message from [peer_ID 2].
+    def received_interested(self, peer_id2):
+        self._log(f"Peer {self.peer_id} received the 'interested' message from {peer_id2}.")
+
+    # Whenever a peer receives a ‘not interested’ message, it generates the following log:
+    # [Time]: Peer [peer_ID 1] received the ‘not interested’ message from [peer_ID 2].
+    def received_not_interested(self, peer_id2):
+        self._log(f"Peer {self.peer_id} received the 'not interested' message from {peer_id2}.")
+
+    # Whenever a peer finishes downloading a piece, it generates the following log:
+    # [Time]: Peer [peer_ID 1] has downloaded the piece [piece index] from [peer_ID 2].
+    # Now the number of pieces it has is [number of pieces].
+    def downloaded_piece(self, peer_id2, piece_index, num_pieces):
+        self._log(
+            f"Peer {self.peer_id} has downloaded the piece {piece_index} from {peer_id2}. Now the number of pieces it has is {num_pieces}."
+        )
+
+    # Whenever a peer downloads the complete file, it generates the following log:
+    # [Time]: Peer [peer_ID] has downloaded the complete file.
+    def downloaded_file(self):
+        self._log(f"Peer {self.peer_id} has downloaded the complete file.")
