@@ -6,3 +6,6 @@ venv/
 peer_*/
 log_peer_*.log
 .idea/
+
+Common.cfg
+PeerInfo.cfg
