@@ -1,4 +1,5 @@
 # P2P File Sharing Project
+Developed by Dominic Ghizzoni, Jesus Lopez, Jett Nguyen, & Kelly Tran
 
 ## Peer process usage
 
