@@ -2,7 +2,12 @@ import os
 import sys
 import socket
 import threading
+import time
 from src.logger import get_peer_logger
+from src.messages import (
+    handle_connection,
+    create_handshake
+)
 from src.config import Config
 
 
@@ -10,7 +15,16 @@ def accept_connections(server_socket, logger, peer_id):
     """Accept incoming TCP connections and log them (midpoint skeleton)."""
     while True:
         conn, addr = server_socket.accept()
-        logger._log(f"Peer {peer_id} accepted connection from {addr} (placeholder, handshake later)")
+
+        logger._log(f"Peer {peer_id} accepted connection from {addr}")
+
+        neighbor_id = addr
+
+        threading.Thread(
+            target=handle_connection,
+            args=(conn, neighbor_id, logger, peer_id),
+            daemon=True
+        ).start()
 
 
 def main():
@@ -46,7 +60,9 @@ def main():
     logger = get_peer_logger(peer_id, working_dir=project_root)
 
     print(
-    f"peerProcess started (peer_id={peer_id}, port={self_port}, has_file={int(self_has_file)}) | " f"peers={total_peers}, pieces={num_pieces}")
+        f"peerProcess started (peer_id={peer_id}, port={self_port}, "
+        f"has_file={int(self_has_file)}) | peers={total_peers}, pieces={num_pieces}"
+    )
 
     # Each peer stores files in its own directory: peer_<peer_id>/
     peer_dir = os.path.join(project_root, f"peer_{peer_id}")
@@ -69,10 +85,18 @@ def main():
 
             neighbors[p.peer_id] = sock
 
-            # Log: Peer [peer_ID 1] makes a connection to Peer [peer_ID 2].
             logger.connect_to(p.peer_id)
 
             print(f"Connected to peer {p.peer_id} at {p.host_name}:{p.port}")
+
+            # Send handshake immediately after connection
+            sock.sendall(create_handshake(peer_id))
+
+            threading.Thread(
+                target=handle_connection,
+                args=(sock, p.peer_id, logger, peer_id),
+                daemon=True
+            ).start()
 
         except Exception as e:
             print(f"Failed to connect to peer {p.peer_id} at {p.host_name}:{p.port}: {e}")
@@ -92,8 +116,6 @@ def main():
 
     print(f"Peer {peer_id} listening on {self_host}:{self_port}")
 
-
-
     # Keep process alive (temporary for midpoint testing)
     try:
         while True:
@@ -101,6 +123,6 @@ def main():
     except KeyboardInterrupt:
         print("\nShutting down...")
 
+
 if __name__ == "__main__":
     main()
-
