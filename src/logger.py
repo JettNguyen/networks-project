@@ -41,7 +41,7 @@ def get_peer_logger(peer_id, working_dir):
     if not has_correct_handler:
         handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
 
-        # Add the required [Time] prefix (date, hour, minute, sec) to every log message automatically
+        # Add the required [Time] prefix (date, hour, minute, sec) to every log message
         handler.setFormatter(logging.Formatter(
             fmt="[%(asctime)s]: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -60,6 +60,15 @@ class PeerLogger:
     # Log the message body
     def _log(self, msg):
         self._logger.info(msg)
+
+    # Close and detach all handlers used by this logger
+    def close(self):
+        for h in list(self._logger.handlers):
+            try:
+                h.flush()
+                h.close()
+            finally:
+                self._logger.removeHandler(h)
 
     # Whenever a peer makes a TCP connection to other peer, it generates the following log:
     # [Time]: Peer [peer_ID 1] makes a connection to Peer [peer_ID 2].
