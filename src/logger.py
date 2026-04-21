@@ -4,9 +4,11 @@ import os
 
 
 def get_peer_logger(peer_id, working_dir):
+    peer_id = int(peer_id)
 
     # Log file must be log_peer_[peerID].log in the working directory
     base_dir = os.path.abspath(working_dir)
+    os.makedirs(base_dir, exist_ok=True)
     log_file = os.path.join(base_dir, f"log_peer_{peer_id}.log")
 
     # Create a dedicated logger instance for the peer
@@ -14,18 +16,31 @@ def get_peer_logger(peer_id, working_dir):
     logger.setLevel(logging.INFO)
     logger.propagate = False
 
-    # Avoid duplicate FileHandlers
-    already_has_handler = False
+    handlers_to_remove = []
+    has_correct_handler = False
+
+    # For each file handler, verify that it points to the correct log file
     for h in logger.handlers:
-        if isinstance(h, logging.FileHandler) and os.path.abspath(getattr(h, "baseFilename", "")) == os.path.abspath(log_file):
-            already_has_handler = True
-            break
+        if isinstance(h, logging.FileHandler):
+            if os.path.abspath(getattr(h, "baseFilename", "")) == os.path.abspath(log_file):
+                has_correct_handler = True
+
+            # Otherwise, remove the stale handler before attaching the correct one
+            else:
+                handlers_to_remove.append(h)
+
+    for h in handlers_to_remove:
+        logger.removeHandler(h)
+        try:
+            h.close()
+        except Exception:
+            pass
 
     # Attach a FileHandler to write log messages to its log file
-    if not already_has_handler:
+    if not has_correct_handler:
         handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
 
-        # Add the required [Time] prefix (date, hour, minute, sec) to every log message automatically
+        # Add the required [Time] prefix (date, hour, minute, sec) to every log message
         handler.setFormatter(logging.Formatter(
             fmt="[%(asctime)s]: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -45,6 +60,15 @@ class PeerLogger:
     def _log(self, msg):
         self._logger.info(msg)
 
+    # Close and detach all handlers used by this logger
+    def close(self):
+        for h in list(self._logger.handlers):
+            try:
+                h.flush()
+                h.close()
+            finally:
+                self._logger.removeHandler(h)
+
     # Whenever a peer makes a TCP connection to other peer, it generates the following log:
     # [Time]: Peer [peer_ID 1] makes a connection to Peer [peer_ID 2].
     def connect_to(self, peer_id2):
@@ -60,12 +84,12 @@ class PeerLogger:
     def preferred_neighbors(self, neighbor_ids):
         # [preferred neighbor list] is the list of peer IDs separated by comma ','
         neighbor_list = ", ".join(str(x) for x in neighbor_ids)
-        self._log(f"Peer {self.peer_id} has the preferred neighbors [{neighbor_list}].")
+        self._log(f"Peer {self.peer_id} has the preferred neighbors {neighbor_list}.")
 
     # Whenever a peer changes its optimistically unchoked neighbor, it generates the following log:
     # [Time]: Peer [peer_ID] has the optimistically unchoked neighbor [optimistically unchoked neighbor ID].
     def optimistically_unchoked(self, neighbor_id):
-        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor [{neighbor_id}].")
+        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor {neighbor_id}.")
 
     # Whenever a peer is unchoked by a neighbor (a peer receives an unchoking message from a neighbor), it generates the following log:
     # [Time]: Peer [peer_ID 1] is unchoked by [peer_ID 2].
