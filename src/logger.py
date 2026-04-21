@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import logging
 import os
-from typing import Iterable
 
 
 def get_peer_logger(peer_id, working_dir):
@@ -85,12 +84,12 @@ class PeerLogger:
     def preferred_neighbors(self, neighbor_ids):
         # [preferred neighbor list] is the list of peer IDs separated by comma ','
         neighbor_list = ", ".join(str(x) for x in neighbor_ids)
-        self._log(f"Peer {self.peer_id} has the preferred neighbors [{neighbor_list}].")
+        self._log(f"Peer {self.peer_id} has the preferred neighbors {neighbor_list}.")
 
     # Whenever a peer changes its optimistically unchoked neighbor, it generates the following log:
     # [Time]: Peer [peer_ID] has the optimistically unchoked neighbor [optimistically unchoked neighbor ID].
     def optimistically_unchoked(self, neighbor_id):
-        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor [{neighbor_id}].")
+        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor {neighbor_id}.")
 
     # Whenever a peer is unchoked by a neighbor (a peer receives an unchoking message from a neighbor), it generates the following log:
     # [Time]: Peer [peer_ID 1] is unchoked by [peer_ID 2].
