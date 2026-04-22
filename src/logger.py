@@ -126,5 +126,5 @@ class PeerLogger:
 
     # Whenever a peer downloads the complete file, it generates the following log:
     # [Time]: Peer [peer_ID] has downloaded the complete file.
-    def downloaded_file(self):
+    def complete_file(self):
         self._log(f"Peer {self.peer_id} has downloaded the complete file.")
