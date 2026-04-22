@@ -9,7 +9,7 @@ class FileManager:
         self.file_size = file_size
         self.piece_size = piece_size
         self.num_pieces = num_pieces
-        self.peer_dir = os.path.join(project_root, f"peer_{peer_id}")
+        self.peer_dir = os.path.join(project_root, str(peer_id))
         os.makedirs(self.peer_dir, exist_ok=True)
         self._lock = threading.Lock()
 
@@ -25,11 +25,12 @@ class FileManager:
                 f.write(data)
 
     def read_piece(self, piece_index):
-        path = self.piece_path(piece_index)
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Piece {piece_index} not found")
-        with open(path, 'rb') as f:
-            return f.read()
+        with self._lock:
+            path = self.piece_path(piece_index)
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Piece {piece_index} not found")
+            with open(path, 'rb') as f:
+                return f.read()
 
     def load_initial_pieces(self):
         src_file = os.path.join(self.peer_dir, self.file_name)
@@ -46,10 +47,17 @@ class FileManager:
 
     def assemble_file(self):
         output_path = os.path.join(self.peer_dir, self.file_name)
-        with self._lock:
-            with open(output_path, 'wb') as out:
-                for i in range(self.num_pieces):
-                    out.write(self.read_piece(i))
+        bytes_written = 0
+        with open(output_path, 'wb') as out:
+            for i in range(self.num_pieces):
+                if not self.has_piece(i):
+                    raise RuntimeError(f"Missing piece {i}, cannot assemble file")
+                data = self.read_piece(i)
+                remaining = self.file_size - bytes_written
+                if len(data) > remaining:
+                    data = data[:remaining]
+                out.write(data)
+                bytes_written += len(data)
 
     def build_bitfield(self):
         num_bytes = (self.num_pieces + 7) // 8
